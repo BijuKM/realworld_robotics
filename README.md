@@ -1,2 +1,2 @@
 # realworld_robotics
-An explorative journey into creating robots for the real world
+An exploratory journey into creating robots for the real world
