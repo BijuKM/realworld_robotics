@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Realworld Robotics</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Roboto", "Noto Sans", "Segoe UI", Arial, sans-serif;
+    font-size: 15px;
+    color: #172b4d;
+    background: #ffffff;
+  }
+
+  /* ---------- Top banner ---------- */
+  header.site-header {
+    background: #172b4d;
+    color: #fff;
+    padding: 10px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  header.site-header .logo { font-size: 20px; font-weight: 700; }
+  header.site-header .breadcrumb { font-size: 13px; color: #dfe1e6; }
+
+  /* ---------- Layout ---------- */
+  .layout { display: flex; align-items: flex-start; min-height: calc(100vh - 48px); }
+
+  /* ---------- Left navigation tree ---------- */
+  nav.page-tree {
+    width: 270px;
+    flex-shrink: 0;
+    border-right: 1px solid #dfe1e6;
+    background: #f4f5f7;
+    padding: 16px 8px 40px 8px;
+    position: sticky;
+    top: 0;
+    max-height: 100vh;
+    overflow-y: auto;
+  }
+  nav.page-tree .tree-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6b778c;
+    padding: 4px 12px 8px 12px;
+  }
+  nav.page-tree ul { list-style: none; margin: 0; padding: 0; }
+  nav.page-tree li { margin: 1px 0; }
+  nav.page-tree a {
+    display: block;
+    padding: 6px 12px;
+    border-radius: 4px;
+    text-decoration: none;
+    color: #172b4d;
+    line-height: 1.4;
+  }
+  nav.page-tree a:hover { background: #dfe1e6; }
+  nav.page-tree a.active { background: #e9e2ff; color: #40329e; font-weight: 600; }
+  nav.page-tree ul ul {
+    padding-left: 18px;
+    border-left: 1px dotted #c1c7d0;
+    margin-left: 10px;
+  }
+
+  /* ---------- Main content ---------- */
+  main.content { flex: 1; padding: 28px 48px 80px 48px; max-width: 920px; }
+  main.content h1 {
+    font-size: 30px; margin: 0 0 4px 0;
+    border-bottom: 1px solid #dfe1e6; padding-bottom: 10px;
+  }
+  main.content h2 { font-size: 22px; margin: 36px 0 8px 0; border-bottom: 1px solid #dfe1e6; padding-bottom: 6px; }
+  main.content h3 { font-size: 17px; margin: 26px 0 6px 0; }
+  main.content p { line-height: 1.65; margin: 8px 0; }
+  main.content ol, main.content ul { line-height: 1.65; }
+  main.content code { background: #f4f5f7; padding: 2px 5px; border-radius: 3px; font-size: 13px; }
+  main.content table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+  main.content th, main.content td { border: 1px solid #dfe1e6; padding: 8px 12px; text-align: left; }
+  main.content th { background: #f4f5f7; }
+
+  .info-banner {
+    background: #e9e2ff;
+    border-left: 4px solid #40329e;
+    padding: 10px 14px;
+    margin: 16px 0;
+    border-radius: 0 4px 4px 0;
+  }
+  .success-banner {
+    background: #e3fcef;
+    border-left: 4px solid #36b37e;
+    padding: 10px 14px;
+    margin: 16px 0;
+    border-radius: 0 4px 4px 0;
+  }
+
+  /* ---------- SVG illustrations ---------- */
+  figure.diagram { margin: 18px 0; text-align: center; }
+  figure.diagram svg {
+    max-width: 100%; height: auto;
+    border: 1px solid #dfe1e6; border-radius: 4px; background: #fafbfc;
+  }
+  figure.diagram figcaption { font-size: 13px; color: #6b778c; margin-top: 6px; }
+
+  @media (max-width: 760px) {
+    .layout { flex-direction: column; }
+    nav.page-tree { width: 100%; position: static; max-height: none; border-right: none; border-bottom: 1px solid #dfe1e6; }
+    main.content { padding: 20px 18px 60px 18px; }
+  }
+  
+    /* ---------- Expandable tree ---------- */
+  nav.page-tree li.has-children > a {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-right: 24px;   /* room for the toggle icon */
+    position: relative;
+  }
+  nav.page-tree .toggle {
+    margin-left: auto;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  nav.page-tree .toggle:hover { background: rgba(0,0,0,0.08); }
+  nav.page-tree .toggle::before {
+    content: "";
+    width: 0; height: 0;
+    border-left: 6px solid #6b778c;
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    transition: transform 0.15s ease;
+  }
+  /* Chevron points down when expanded, right when collapsed */
+  nav.page-tree li.collapsed > a .toggle::before { transform: rotate(-90deg); }
+
+  /* Hide/show child lists */
+  nav.page-tree li > ul {
+    overflow: hidden;
+    transition: max-height 0.25s ease;
+  }
+  nav.page-tree li.collapsed > ul {
+    display: none;
+  }
+
+  /* Highlight the active page's ancestors as expanded by default */
+  nav.page-tree .tree-label .tree-toggle-all {
+    float: right;
+    font-size: 11px;
+    text-transform: none;
+    color: #0052cc;
+    cursor: pointer;
+    user-select: none;
+    padding: 2px 4px;
+  }
+  nav.page-tree .tree-label .tree-toggle-all:hover { text-decoration: underline; }
+
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <span class="logo">🤖 Realworld Robotics</span>
+  <span class="breadcrumb">Spaces &rsaquo; Realworld Robotics &rsaquo; <strong>Main Page</strong></span>
+</header>
+
+<div class="layout">
+
+  <!-- ==================== LEFT NAVIGATION TREE ==================== -->
+  <nav class="page-tree">
+	<div class="tree-label">Pages <span class="tree-toggle-all" id="toggleAll">Expand all</span></div>
+    <ul>
+      <li><a href="#overview" class="active">Overview</a></li>
+      <li><a href="#requirements">Project Requirements</a></li>
+      <li>
+        <a href="#foundational-blocks">Foundational Blocks</a>
+        <ul>
+          <li><a href="#voice">1. Voice-based Interaction</a></li>
+          <li><a href="#mobility">2. Mobility</a></li>
+          <li><a href="#object-recognition">3. Object Recognition</a></li>
+          <li><a href="#navigation">4. Navigation</a></li>
+          <li><a href="#arm">5. Arm Actuators</a></li>
+        </ul>
+      </li>
+      <li><a href="#ros2">What is ROS 2?</a></li>
+      <li>
+        <a href="#projects">And Finally, the Projects</a>
+        <ul>
+          <li><a href="#sweeper">Home Project 1 – Sweeper</a></li>
+          <li><a href="#tools">Home Project 2 – Tool Organiser</a></li>
+          <li><a href="#library">Main Project – Library Assistant</a></li>
+        </ul>
+      </li>
+	  <li><a href="robotic_sweeper.html">Autonomous Sweeper Robot</a></li>
+    </ul>	
+  </nav>
+
+  <!-- ==================== MAIN CONTENT ==================== -->
+  <main class="content">
+
+    <!-- ========== OVERVIEW ========== -->
+    <h1 id="overview">Realworld Robotics</h1>
+
+    <p>Generative AI — especially LLMs and multimodal models — has improved exponentially in the 
+	past year and automated practically anything software-related. So it begs the question: can 
+	some of those benefits spill over into activities beyond the confines of the computer or the virtual world?</p>
+	
+	<p>From my limited experience playing with AI on edge devices, I'd say the time is ripe to 
+	explore whether robots actually have what it takes — or, if not today, whether they can be 
+	enhanced to work independently in the real world, with all its randomness and chaos. Can 
+	they deliver a real return on the investment in cost and effort? And can it be done at a reasonable price?</p>
+
+    <p>This is a project in that direction. Or rather — it's not a single project so much as a set
+	of projects, each providing one or more of the foundational blocks, that ultimately culminate 
+	in an umbrella project delivering autonomous, genuinely useful behavior in a public environment.</p>
+
+    <figure class="diagram">
+      <svg viewBox="0 0 720 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Concept: a human speaks a command to a multimodal AI brain inside a robot, which acts in the real world and replies verbally">
+        <!-- human -->
+        <circle cx="80" cy="70" r="22" fill="#fff" stroke="#172b4d" stroke-width="2.5"/>
+        <path d="M50 140 Q80 95 110 140" fill="#fff" stroke="#172b4d" stroke-width="2.5"/>
+        <text x="80" y="165" text-anchor="middle" font-size="13" fill="#172b4d">Human</text>
+        <!-- speech bubble: command -->
+        <rect x="130" y="30" width="140" height="34" rx="8" fill="#fff" stroke="#0052cc" stroke-width="2"/>
+        <text x="200" y="52" text-anchor="middle" font-size="12" fill="#0052cc">"Fetch the newspaper"</text>
+        <path d="M145 60 L130 78 L160 64 Z" fill="#fff" stroke="#0052cc" stroke-width="2"/>
+        <!-- command arrow -->
+        <line x1="270" y1="47" x2="330" y2="80" stroke="#0052cc" stroke-width="2" marker-end="url(#arrowB)"/>
+        <!-- robot + brain -->
+        <rect x="340" y="40" width="180" height="120" rx="12" fill="#fff" stroke="#172b4d" stroke-width="2.5"/>
+        <rect x="365" y="60" width="130" height="42" rx="6" fill="#e9e2ff" stroke="#40329e" stroke-width="2"/>
+        <text x="430" y="78" text-anchor="middle" font-size="12" fill="#40329e" font-weight="bold">Multimodal</text>
+        <text x="430" y="94" text-anchor="middle" font-size="12" fill="#40329e" font-weight="bold">GenAI Brain</text>
+        <circle cx="395" cy="125" r="8" fill="#36b37e"/>
+        <circle cx="465" cy="125" r="8" fill="#36b37e"/>
+        <line x1="380" y1="145" x2="480" y2="145" stroke="#172b4d" stroke-width="2.5" stroke-linecap="round"/>
+        <text x="430" y="185" text-anchor="middle" font-size="13" fill="#172b4d">Robot</text>
+        <!-- response arrow -->
+        <line x1="335" y1="110" x2="120" y2="120" stroke="#0052cc" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrowB)"/>
+        <text x="225" y="102" text-anchor="middle" font-size="11" fill="#0052cc">verbal response</text>
+        <!-- real world -->
+        <rect x="560" y="90" width="46" height="60" fill="#fff" stroke="#172b4d" stroke-width="2.5"/>
+        <circle cx="595" cy="120" r="3" fill="#172b4d"/>
+        <text x="583" y="172" text-anchor="middle" font-size="11" fill="#172b4d">door</text>
+        <rect x="625" y="118" width="55" height="26" rx="4" fill="#fff" stroke="#172b4d" stroke-width="2.5"/>
+        <line x1="632" y1="128" x2="672" y2="128" stroke="#6b778c" stroke-width="1.5"/>
+        <line x1="632" y1="135" x2="665" y2="135" stroke="#6b778c" stroke-width="1.5"/>
+        <text x="652" y="172" text-anchor="middle" font-size="11" fill="#172b4d">newspaper</text>
+        <line x1="522" y1="100" x2="555" y2="110" stroke="#36b37e" stroke-width="2" marker-end="url(#arrowG)"/>
+        <text x="550" y="200" text-anchor="middle" font-size="12" fill="#6b778c" font-style="italic">…the real world, with all its randomness and chaos</text>
+        <defs>
+          <marker id="arrowB" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+            <path d="M0,0 L8,4 L0,8 Z" fill="#0052cc"/>
+          </marker>
+          <marker id="arrowG" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+            <path d="M0,0 L8,4 L0,8 Z" fill="#36b37e"/>
+          </marker>
+        </defs>
+      </svg>
+      <figcaption>The central idea: a multimodal GenAI brain turns verbal commands into real-world actions and replies verbally.</figcaption>
+    </figure>
+
+    <!-- ========== REQUIREMENTS ========== -->
+    <h2 id="requirements">Project Requirements</h2>
+
+    <p>This project (or, I guess, these projects) is a hobbyist endeavour, so it needs to stay within 
+	a hobbyist's budget — standard, off-the-shelf, inexpensive components. And if something's just out
+	of reach, can we improvise by cobbling together a few cheaper options to do the job?</p>
+
+    <p>So, how do we even go about figuring out the requirements? One way is to look at an analogy: 
+	a toddler who has just picked up enough motor skills and language to wander to any corner of the 
+	room — or the house, really — and carry out simple commands like "open the door" or "pick that up." 
+	You'd expect the kid to dodge obstacles and find a way around them. And if the instruction is confusing? They look up and ask, "What do you mean?"</p>
+
+    <p>For a start, let's aim to have our robot do the same.</p>
+
+    <p>So let's lock in these requirements — at least for now. We'll keep adding to the list as we go.</p>
+
+    <ol>
+      <li>Receive verbal commands, act on them if it can, and respond verbally.</li>
+      <li>Be polite. Socially acceptable conversation skills would be great, but at minimum, "please" and "sorry" are non-negotiable.</li>
+      <li>Navigate to any point in the room, building, or locality on its own, working around whatever's in the way.</li>
+      <li>Maintain a collision zone and stop any physical action if a person or object encroaches on it.</li>
+      <li>Visually recognize objects.</li>
+      <li>Pick up objects flexibly — regardless of shape, position, orientation, or fragility.</li>
+      <li>Track where things are (position and orientation) and remember it for later, so things can be put back where they belong.</li>
+      <li>Nice to have: watch a human do a small task and replicate it.</li>
+    </ol>
+
+    <!-- ========== FOUNDATIONAL BLOCKS ========== -->
+    <h2 id="foundational-blocks">Foundational Blocks</h2>
+    <p>The requirements we locked in above give us the building blocks we need to design around:</p>
+
+    <!-- ---- 1 Voice ---- -->
+    <h3 id="voice">1) Voice-based Interaction</h3>
+
+    <p>Fortunately, the improvements in multimodal models hand us almost everything we need here. 
+	It's mostly a matter of wiring the pieces together.Text-to-Speech and Speech-to-Text models are 
+	light enough to run in real time on standard hardware like a Raspberry Pi. They convert human 
+	speech to text and back. </p>
+
+    <p>For simple commands like <em>"turn left"</em> or <em>"pick up X"</em>, the text output can
+    go straight to the motors and actuators. But for something more complex — say,<em>"fetch the
+    newspaper"</em>— that command needs to be fed into the multimodal model, which breaks it down 
+	into smaller steps: navigate to the door, open the door, pick up the newspaper, close the door, 
+	and so on.</p>
+	
+    <p>	The multimodal model can also handle general chat, answer questions about the environment, 
+	and adopt a persona to keep things conversational (shoutout to requirement 2).</p>
+
+    <figure class="diagram">
+      <svg viewBox="0 0 720 230" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Voice pipeline: microphone to speech-to-text, either straight to motors for simple commands or through a multimodal LLM which decomposes complex commands, and text back to speech for the response">
+        <defs>
+          <marker id="arrowD" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+            <path d="M0,0 L8,4 L0,8 Z" fill="#6b778c"/>
+          </marker>
+        </defs>
+        <!-- mic -->
+        <rect x="20" y="80" width="70" height="40" rx="8" fill="#fff" stroke="#172b4d" stroke-width="2"/>
+        <circle cx="55" cy="95" r="8" fill="none" stroke="#172b4d" stroke-width="2"/>
+        <path d="M45 100 Q55 114 65 100" fill="none" stroke="#172b4d" stroke-width="2"/>
+        <text x="55" y="140" text-anchor="middle" font-size="12" fill="#172b4d">Mic</text>
+        <!-- stt -->
+        <rect x="130" y="80" width="110" height="40" rx="8" fill="#fff" stroke="#0052cc" stroke-width="2"/>
+        <text x="185" y="104" text-anchor="middle" font-size="12" fill="#0052cc">Speech-to-text</text>
+        <!-- simple path -->
+        <rect x="300" y="25" width="130" height="36" rx="8" fill="#e3fcef" stroke="#36b37e" stroke-width="2"/>
+        <text x="365" y="48" text-anchor="middle" font-size="12" fill="#172b4d">Simple command</text>
+        <rect x="490" y="25" width="120" height="36" rx="8" fill="#fff" stroke="#36b37e" stroke-width="2"/>
+        <text x="550" y="43" text-anchor="middle" font-size="12" fill="#172b4d">Motors /</text>
+        <text x="550" y="57" text-anchor="middle" font-size="12" fill="#172b4d">actuators</text>
+        <!-- complex path -->
+        <rect x="300" y="130" width="130" height="44" rx="8" fill="#e9e2ff" stroke="#40329e" stroke-width="2"/>
+        <text x="365" y="148" text-anchor="middle" font-size="12" fill="#40329e" font-weight="bold">Multimodal</text>
+        <text x="365" y="163" text-anchor="middle" font-size="12" fill="#40329e" font-weight="bold">LLM</text>
+        <rect x="490" y="128" width="200" height="48" rx="8" fill="#fff" stroke="#40329e" stroke-width="2"/>
+        <text x="590" y="146" text-anchor="middle" font-size="11.5" fill="#172b4d">navigate → open door →</text>
+        <text x="590" y="162" text-anchor="middle" font-size="11.5" fill="#172b4d">pick up → close door</text>
+        <!-- tts / reply -->
+        <rect x="130" y="185" width="110" height="36" rx="8" fill="#fff" stroke="#0052cc" stroke-width="2"/>
+        <text x="185" y="208" text-anchor="middle" font-size="12" fill="#0052cc">Text-to-speech</text>
+        <rect x="20" y="185" width="70" height="36" rx="8" fill="#fff" stroke="#172b4d" stroke-width="2"/>
+        <text x="55" y="208" text-anchor="middle" font-size="12" fill="#172b4d">Speaker</text>
+        <!-- arrows -->
+        <line x1="90" y1="100" x2="128" y2="100" stroke="#6b778c" stroke-width="2" marker-end="url(#arrowD)"/>
+        <line x1="240" y1="92" x2="296" y2="46" stroke="#6b778c" stroke-width="2" marker-end="url(#arrowD)"/>
+        <line x1="240" y1="110" x2="296" y2="150" stroke="#6b778c" stroke-width="2" marker-end="url(#arrowD)"/>
+        <line x1="430" y1="43" x2="488" y2="43" stroke="#6b778c" stroke-width="2" marker-end="url(#arrowD)"/>
+        <line x1="430" y1="152" x2="488" y2="152" stroke="#6b778c" stroke-width="2" marker-end="url(#arrowD)"/>
+        <line x1="365" y1="174" x2="240" y2="203" stroke="#6b778c" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#arrowD)"/>
+        <line x1="128" y1="203" x2="92" y2="203" stroke="#6b778c" stroke-width="2" marker-end="url(#arrowD)"/>
+      </svg>
+      <figcaption>Split-path voice pipeline: simple commands go straight to actuators; complex commands are decomposed by the multimodal LLM.</figcaption>
+    </figure>
+
+    <div class="info-banner">
+      <strong>One note:</strong> I'd strongly prefer to run the LLM locally on a dedicated accelerator rather than
+	  lean on an internet connection. I'm using the Axera LLM-8850 (8 GB), which seems to be out of stock at the
+	  moment. Also, if we can get interaction working over a Bluetooth headset, that'd be ideal — no need to shout
+	  commands while the robot wanders out of hearing range.
+    </div>
+
+    <!-- ---- 2 Mobility ---- -->
+    <h3 id="mobility">2) Mobility</h3>
+
+    <p>This is where we give the robot the ability to actually move around. We can start simple — a 
+	differential-wheeled setup with two drive wheels and a caster — and work our way up to advanced 
+	options like a two-legged platform or even something aerial (drone-style). The latter becomes an 
+	absolute must for vertical travel: negotiating floors, escalators, and the like.</p>
+
+    <p>Even within the wheeled camp, we can step up from a two-wheel differential drive to a 
+	four-wheeled configuration once we're lugging heavier payloads, say, a robotic arm.These robots 
+	are controlled by feeding them a forward/backward velocity and a turn rate. A proper PID loop is 
+	essential to make sure the actual velocity and angle match what we asked for — and that means 
+	drive motors with encoders for feedback.</p>
+
+    <figure class="diagram">
+      <svg viewBox="0 0 720 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Differential drive top view with two drive wheels and a caster wheel, showing forward velocity and turn control, plus a PID feedback loop">
+        <defs>
+          <marker id="arrowP" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+            <path d="M0,0 L8,4 L0,8 Z" fill="#0052cc"/>
+          </marker>
+        </defs>
+        <!-- chassis top view -->
+        <rect x="120" y="50" width="150" height="110" rx="14" fill="#fff" stroke="#172b4d" stroke-width="2.5"/>
+        
+        <circle cx="120" cy="130" r="24" fill="#40329e"/>
+        
+        <circle cx="270" cy="130" r="24" fill="#40329e"/>
+        <circle cx="195" cy="75" r="12" fill="#c1c7d0" stroke="#172b4d" stroke-width="2"/>
+        <text x="195" y="150" text-anchor="middle" font-size="12" fill="#172b4d">chassis</text>
+        <!-- velocity arrow -->
+        <line x1="195" y1="30" x2="195" y2="8" stroke="#0052cc" stroke-width="2" marker-end="url(#arrowP)"/>
+        <text x="230" y="20" font-size="12" fill="#0052cc">v (forward velocity)</text>
+        <!-- turn arc -->
+        <path d="M330 105 A 60 60 0 0 1 300 160" fill="none" stroke="#0052cc" stroke-width="2" marker-end="url(#arrowP)"/>
+        <text x="345" y="145" font-size="12" fill="#0052cc">ω (turn rate)</text>
+        <!-- labels -->
+        <text x="120" y="200" text-anchor="middle" font-size="11.5" fill="#6b778c">drive wheel L + encoder</text>
+        <text x="270" y="200" text-anchor="middle" font-size="11.5" fill="#6b778c">drive wheel R + encoder</text>
+        <text x="200" y="100" text-anchor="middle" font-size="11.5" fill="#6b778c">caster wheel (passive)</text>
+        <!-- PID loop on the right -->
+        <rect x="470" y="50" width="130" height="40" rx="8" fill="#fff" stroke="#36b37e" stroke-width="2"/>
+        <text x="535" y="68" text-anchor="middle" font-size="12" fill="#172b4d">Desired v, ω</text>
+        <text x="535" y="82" text-anchor="middle" font-size="11" fill="#6b778c">(from Raspberry Pi)</text>
+        <rect x="470" y="115" width="130" height="40" rx="8" fill="#e9e2ff" stroke="#40329e" stroke-width="2"/>
+        <text x="535" y="133" text-anchor="middle" font-size="12" fill="#40329e" font-weight="bold">PID Controller</text>
+        <text x="535" y="148" text-anchor="middle" font-size="11" fill="#40329e">(on Arduino)</text>
+        <rect x="470" y="180" width="130" height="40" rx="8" fill="#fff" stroke="#172b4d" stroke-width="2"/>
+        <text x="535" y="198" text-anchor="middle" font-size="12" fill="#172b4d">LM298 H-bridge</text>
+        <text x="535" y="212" text-anchor="middle" font-size="11" fill="#6b778c">→ drive motors</text>
+        <line x1="535" y1="90" x2="535" y2="113" stroke="#0052cc" stroke-width="2" marker-end="url(#arrowP)"/>
+        <line x1="535" y1="155" x2="535" y2="178" stroke="#0052cc" stroke-width="2" marker-end="url(#arrowP)"/>
+        <!-- feedback line -->
+        <line x1="600" y1="200" x2="655" y2="200" stroke="#ff5630" stroke-width="2"/>
+        <line x1="655" y1="200" x2="655" y2="135" stroke="#ff5630" stroke-width="2"/>
+        <line x1="655" y1="135" x2="602" y2="135" stroke="#ff5630" stroke-width="2" marker-end="url(#arrowP)"/>
+        <text x="665" y="170" font-size="11" fill="#ff5630">encoder</text>
+        <text x="665" y="184" font-size="11" fill="#ff5630">feedback</text>
+        <text x="355" y="30" font-size="12" fill="#6b778c" font-style="italic">Top view</text>
+      </svg>
+      <figcaption>Differential drive configuration and the PID velocity/turn-rate feedback loop (Raspberry Pi → Arduino → LM298 → motors, with encoder feedback).</figcaption>
+    </figure>
+
+    <div class="info-banner">
+      The initial version of our robot will be built using an Arduino controlling the motors via an
+      LM298 H-bridge driver, with the Arduino itself fed the velocity and turn by the Raspberry Pi.
+    </div>
+
+    <!-- ---- 3 Object Recognition ---- -->
+    <h3 id="object-recognition">3) Object Recognition</h3>
+
+    <p>This isn't really a standalone block so much as a capability the other blocks depend on. In the
+	voice-interaction block, the robot needs to "recognize" what a command means. During navigation, 
+	it needs to identify an object — a door, say — before heading toward it. For picking tasks, it needs
+	to recognize the target object and its position and orientation.</p>
+
+    <p>This is where most of our effort will go, because there's no single method that fits everywhere. 
+	From what I've dug into so far, I think we have a handful of approaches to mix and match:</p>
+
+    <ol type="a">
+      <li><strong>Computer vision</strong> - mainly OpenCV for image recognition. Fastest option, provided we can find reliable visual features to key off.</li>
+      <li><strong>Machine learning</strong> — the YOLO family, again for image recognition. Needs a training pass for each specific object. YOLOE is a nice middle ground: you can train on a single image, though the detection rate may not hit the mark.</li>
+      <li><strong>Multimodal GenAI models</strong> — for both image and voice recognition. Slowest of the bunch, but also the most likely to just... get it right.</li>
+      <li><strong>Depth sensing</strong>  — laser or ultrasonic time-of-flight sensors to grab depth info and tell the difference between a real object and a picture of one</li>
+    </ol>
+
+    <p>We'll be layering all of these across the projects.</p>
+
+    <figure class="diagram">
+      <svg viewBox="0 0 720 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Four object recognition approaches — OpenCV, YOLO, multimodal GenAI, and time-of-flight depth — converging into a single recognition decision">
+        <defs>
+          <marker id="arrowR" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+            <path d="M0,0 L8,4 L0,8 Z" fill="#6b778c"/>
+          </marker>
+        </defs>
+        <!-- camera -->
+        <rect x="20" y="70" width="80" height="60" rx="8" fill="#fff" stroke="#172b4d" stroke-width="2.5"/>
+        <circle cx="60" cy="100" r="18" fill="none" stroke="#172b4d" stroke-width="2.5"/>
+        <circle cx="60" cy="100" r="8" fill="#dfe1e6"/>
+        <text x="60" y="152" text-anchor="middle" font-size="12" fill="#172b4d">Camera + sensors</text>
+        <!-- lanes -->
+        <rect x="180" y="18" width="180" height="36" rx="8" fill="#fff" stroke="#36b37e" stroke-width="2"/>
+        <text x="270" y="41" text-anchor="middle" font-size="12" fill="#172b4d">a) OpenCV — fast</text>
+        <rect x="180" y="64" width="180" height="36" rx="8" fill="#fff" stroke="#0052cc" stroke-width="2"/>
+        <text x="270" y="87" text-anchor="middle" font-size="12" fill="#172b4d">b) YOLO / YOLO-E — trained</text>
+        <rect x="180" y="110" width="180" height="36" rx="8" fill="#e9e2ff" stroke="#40329e" stroke-width="2"/>
+        <text x="270" y="133" text-anchor="middle" font-size="12" fill="#172b4d">c) Multimodal GenAI — robust</text>
+        <rect x="180" y="156" width="180" height="36" rx="8" fill="#fff" stroke="#ff5630" stroke-width="2"/>
+        <text x="270" y="179" text-anchor="middle" font-size="12" fill="#172b4d">d) ToF depth — real vs picture</text>
+        <!-- decision -->
+        <rect x="440" y="70" width="190" height="60" rx="10" fill="#fff" stroke="#172b4d" stroke-width="2.5"/>
+        <text x="535" y="96" text-anchor="middle" font-size="12.5" fill="#172b4d" font-weight="bold">Recognize:</text>
+        <text x="535" y="114" text-anchor="middle" font-size="11.5" fill="#6b778c">identity + position + orientation</text>
+        <!-- arrows -->
+        <line x1="100" y1="90" x2="178" y2="38" stroke="#6b778c" stroke-width="2" marker-end="url(#arrowR)"/>
+        <line x1="100" y1="100" x2="178" y2="82" stroke="#6b778c" stroke-width="2" marker-end="url(#arrowR)"/>
+        <line x1="100" y1="110" x2="178" y2="128" stroke="#6b778c" stroke-width="2" marker-end="url(#arrowR)"/>
+        <line x1="100" y1="120" x2="178" y2="174" stroke="#6b778c" stroke-width="2" marker-end="url(#arrowR)"/>
+        <line x1="360" y1="36" x2="440" y2="88" stroke="#6b778c" stroke-width="2" marker-end="url(#arrowR)"/>
+        <line x1="360" y1="82" x2="440" y2="96" stroke="#6b778c" stroke-width="2" marker-end="url(#arrowR)"/>
+        <line x1="360" y1="128" x2="440" y2="112" stroke="#6b778c" stroke-width="2" marker-end="url(#arrowR)"/>
+        <line x1="360" y1="174" x2="440" y2="120" stroke="#6b778c" stroke-width="2" marker-end="url(#arrowR)"/>
+        <!-- downstream -->
+        <line x1="630" y1="100" x2="668" y2="100" stroke="#0052cc" stroke-width="2" marker-end="url(#arrowR)"/>
+        <text x="688" y="94" text-anchor="middle" font-size="11" fill="#0052cc">navigate /</text>
+        <text x="688" y="108" text-anchor="middle" font-size="11" fill="#0052cc">pick</text>
+      </svg>
+      <figcaption>Object recognition is a shared service: multiple complementary approaches converge into identity, position and orientation data used by navigation and the arm.</figcaption>
+    </figure>
+
+    <!-- ---- 4 Navigation ---- -->
+    <h3 id="navigation">4) Navigation</h3>
+
+    <p>Think of this as "get the robot to a specific spot.".</p> 
+	<p>In the real world, a person would say <em>"go near the kitchen table"</em> or <em>"stop about three feet to
+	the left of the door,"<em> not </em>"travel to coordinates x, y"</em> — which is how most robotics frameworks 
+	handle it.</p>
+
+    <p>Fortunately, there are libraries that map a room's layout using LiDAR and others that compute a path to a 
+	target point while avoiding obstacles automatically. The catch? The resulting map only records distance to an 
+	obstacle — a wall, a door — but not <em>what</em> that obstacle is. Identifying the object requires visual input from 
+	a camera, so we'll need to merge LiDAR and vision data to navigate anything that isn't a sterile lab.</p>
+
+    <p>Another wrinkle: most off-the-shelf LiDARs are 2-D. They scan a single height plane, and anything above or below 
+	that plane is invisible to them. Fine for a vacuum cleaner. Not fine for the messy, three-dimensional world we 
+	actually live in. We'll need 3-D LiDAR, and since those are eye-wateringly expensive, I suspect we'll be improvising
+	our own from cheaper parts.</p>
+
+    <figure class="diagram">
+      <svg viewBox="0 0 720 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Top-down room: robot emitting a LiDAR sweep, obstacle map points, a dashed path to a visually recognised door, and a note that 2D LiDAR misses obstacles above and below its scan plane">
+        <defs>
+          <marker id="arrowN" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+            <path d="M0,0 L8,4 L0,8 Z" fill="#172b4d"/>
+          </marker>
+        </defs>
+        <!-- room -->
+        <rect x="60" y="30" width="420" height="190" fill="#fff" stroke="#172b4d" stroke-width="3"/>
+        <!-- obstacle points -->
+        <g fill="#c1c7d0" stroke="#6b778c" stroke-width="1">
+          <circle cx="150" cy="90" r="4"/><circle cx="185" cy="75" r="4"/><circle cx="220" cy="70" r="4"/>
+          <circle cx="330" cy="180" r="4"/><circle cx="365" cy="190" r="4"/><circle cx="400" cy="195" r="4"/>
+        </g>
+        <!-- door as an obstacle -->
+        <rect x="430" y="80" width="50" height="16" fill="#e3fcef" stroke="#36b37e" stroke-width="2"/>
+        <text x="455" y="72" text-anchor="middle" font-size="11.5" fill="#36b37e">"door" (label from camera)</text>
+        <!-- robot -->
+        <circle cx="120" cy="170" r="16" fill="#fff" stroke="#172b4d" stroke-width="2.5"/>
+        <circle cx="120" cy="170" r="5" fill="#172b4d"/>
+        <!-- lidar sweep -->
+        <path d="M120 170 L120 70 A 100 100 0 0 1 214 140 Z" fill="#0052cc" opacity="0.12"/>
+        <line x1="120" y1="170" x2="120" y2="70" stroke="#0052cc" stroke-width="1.5"/>
+        <line x1="120" y1="170" x2="214" y2="140" stroke="#0052cc" stroke-width="1.5"/>
+        <text x="150" y="115" font-size="11.5" fill="#0052cc">LiDAR sweep (2-D plane)</text>
+        <!-- path -->
+        <path d="M138 160 C 240 150, 300 130, 428 100" fill="none" stroke="#ff5630" stroke-width="2.5" stroke-dasharray="8 6" marker-end="url(#arrowN)"/>
+        <text x="260" y="148" font-size="11.5" fill="#ff5630">planned path, obstacle-avoiding</text>
+        <!-- 2D vs 3D note -->
+        <rect x="520" y="60" width="180" height="110" rx="8" fill="#f4f5f7" stroke="#dfe1e6" stroke-width="2"/>
+        <text x="610" y="86" text-anchor="middle" font-size="12.5" fill="#172b4d" font-weight="bold">2-D LiDAR limitation</text>
+        <line x1="535" y1="104" x2="685" y2="104" stroke="#6b778c" stroke-width="2"/>
+        <text x="610" y="122" text-anchor="middle" font-size="11" fill="#6b778c">sees only this height →</text>
+        <text x="610" y="138" text-anchor="middle" font-size="11" fill="#6b778c">objects above/below are lost</text>
+        <text x="610" y="158" text-anchor="middle" font-size="11" fill="#40329e">→ improvise our own 3-D LiDAR</text>
+        <text x="330" y="238" text-anchor="middle" font-size="12" fill="#6b778c" font-style="italic">Top view: map (distance data) + camera (semantics) must be merged for real-world navigation</text>
+      </svg>
+      <figcaption>Navigation merges LiDAR distance maps with visual object identity, while working around the 2-D scan-plane limitation.</figcaption>
+    </figure>
+
+    <!-- ---- 5 Arm ---- -->
+    <h3 id="arm">5) Arm & Gripper</h3>
+
+    <p>I'm going to start with the commonly available 6-DOF metallic robotic arms — they handle heavier loads — 
+	but that comes with the baggage of extra power requirements and a lot of balancing.</p>
+
+    <p>As noted in the requirements, the gripper needs to grab anything, regardless of shape or orientation. The plan: 
+	use a camera mounted on the arm, trace the object's outline with OpenCV, and drive the gripper fingers to match.</p>
+
+    <p>We'll also need tactile feedback sensors in the fingers so the robot doesn't crush whatever it's holding. And 
+	the standard two-finger gripper will need at least one extra finger underneath to cradle fragile objects and stop 
+	them slipping through when the grip is necessarily light.</p>
+
+    <figure class="diagram">
+      <svg viewBox="0 0 720 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="6-DOF arm with a mounted camera, a modified three-finger gripper (support finger below) holding a fragile glass, and tactile sensors on the fingertips">
+        <defs>
+          <marker id="arrowA" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+            <path d="M0,0 L8,4 L0,8 Z" fill="#6b778c"/>
+          </marker>
+        </defs>
+        <!-- base + segments -->
+        <rect x="80" y="190" width="110" height="26" rx="6" fill="#40329e"/>
+        <rect x="118" y="160" width="34" height="34" rx="6" fill="#fff" stroke="#40329e" stroke-width="2.5"/>
+        <line x1="135" y1="162" x2="205" y2="95" stroke="#172b4d" stroke-width="10" stroke-linecap="round"/>
+        <line x1="205" y1="95" x2="330" y2="110" stroke="#172b4d" stroke-width="10" stroke-linecap="round"/>
+        <circle cx="135" cy="162" r="9" fill="#fff" stroke="#172b4d" stroke-width="3"/>
+        <circle cx="205" cy="95" r="9" fill="#fff" stroke="#172b4d" stroke-width="3"/>
+		<circle cx="330" cy="110" r="9" fill="#fff" stroke="#172b4d" stroke-width="3"/>
+		
+		<!-- gripper -->
+		<line x1="340" y1="105" x2="360" y2="100" stroke="#172b4d" stroke-width="8" stroke-linecap="round"/>
+        <line x1="340" y1="115" x2="350" y2="125" stroke="#172b4d" stroke-width="8" stroke-linecap="round"/>
+		
+		<circle cx="360" cy="100" r="5" fill="#fff" stroke="#172b4d" stroke-width="3"/>
+		<circle cx="355" cy="130" r="5" fill="#fff" stroke="#172b4d" stroke-width="3"/>
+		<line x1="360" y1="100" x2="380" y2="107" stroke="#172b4d" stroke-width="6" stroke-linecap="round"/>
+		
+        <text x="70" y="235" font-size="11.5" fill="#6b778c">6-DOF metallic arm (extra power + balancing)</text>
+        <!-- camera on arm -->
+        <circle cx="245" cy="100" r="11" fill="#fff" stroke="#0052cc" stroke-width="2.5"/>
+        <circle cx="245" cy="100" r="4" fill="#0052cc"/>
+        <path d="M252 92 Q285 65 330 78" fill="none" stroke="#0052cc" stroke-width="1.5" stroke-dasharray="4 4"/>
+        <text x="262" y="58" font-size="11.5" fill="#0052cc">mounted camera → OpenCV outline tracking</text>
+        <!-- glass object -->
+        <path d="M375 95 L368 150 L412 150 L405 95 Z" fill="#e3fcef" stroke="#36b37e" stroke-width="2"/>
+        <text x="390" y="172" text-anchor="middle" font-size="11.5" fill="#36b37e">fragile object</text>
+		<line x1="355" y1="130" x2="380" y2="127" stroke="#172b4d" stroke-width="6" stroke-linecap="round"/>
+		
+        <!-- fingers: top, side, support below -->
+        <path d="M375 90 L375 100" stroke="#172b4d" stroke-width="7" stroke-linecap="round"/>
+        <path d="M408 100 L405 92" stroke="#172b4d" stroke-width="7" stroke-linecap="round"/>
+        <path d="M372 158 L410 158" stroke="#172b4d" stroke-width="7" stroke-linecap="round"/>
+        <!-- tactile sensors -->
+        <circle cx="375" cy="90" r="5" fill="#ff5630"/>
+        <circle cx="406" cy="92" r="5" fill="#ff5630"/>
+        <circle cx="372" cy="159" r="5" fill="#ff5630"/>
+        <circle cx="410" cy="159" r="5" fill="#ff5630"/>
+        <line x1="418" y1="150" x2="470" y2="150" stroke="#ff5630" stroke-width="1.5"/>
+        <text x="478" y="146" font-size="11.5" fill="#ff5630">tactile sensors —</text>
+        <text x="478" y="161" font-size="11.5" fill="#ff5630">pressure feedback</text>
+        <line x1="390" y1="166" x2="470" y2="185" stroke="#6b778c" stroke-width="1.5"/>
+        <text x="478" y="190" font-size="11.5" fill="#6b778c">added support finger</text>
+        <text x="478" y="204" font-size="11.5" fill="#6b778c">cradles fragile objects from below</text>
+      </svg>
+      <figcaption>Gripper strategy: vision-based outline tracking, tactile pressure feedback, and an added support finger for fragile objects.</figcaption>
+    </figure>
+
+    <!-- ========== ROS2 ========== -->
+    <h2 id="ros2">What is ROS 2 and why should we use it?</h2>
+
+    <p>The Robot Operating System, version 2 — which, despite the name, is not an operating system at all. 
+	It's a framework that binds sensors, actuators, and robotic components together into a functioning whole.</p>
+
+    <p>Think of it as the hub of a wheel: each spoke connects to a specific component — differential drive,
+	cameras, LiDAR, arm — and they all talk through that central hub. It provides the communication glue and 
+	ships out-of-the-box drivers for most common components. A manufacturer just needs to ensure their hardware
+	speaks the ROS2 protocol.</p>
+	
+	<p>That last part is huge for us. Swap out a sensor or a motor, and we're not reinventing the wheel every time. 
+	On top of that, it bundles libraries for the heavy lifting — SLAM, path planning, the works — so we can focus 
+	on the fun bits rather than the plumbing.</p>
+
+    <figure class="diagram">
+      <svg viewBox="0 0 720 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Hub and spoke diagram: ROS 2 at the centre connected to drive, camera, LiDAR, arm, audio and LLM nodes">
+        <circle cx="360" cy="130" r="52" fill="#40329e"/>
+        <text x="360" y="126" text-anchor="middle" font-size="15" fill="#fff" font-weight="bold">ROS 2</text>
+        <!--text x="360" y="144" text-anchor="middle" font-size="10.5" fill="#dfe1e6">pub/sub + drivers + SLAM/nav libs</text-->
+		<text x="360" y="144" text-anchor="middle" font-size="10.5" fill="orange">pub/sub + drivers + SLAM/nav libs</text>
+        <!-- spokes + nodes -->
+        <line x1="312" y1="112" x2="150" y2="55" stroke="#6b778c" stroke-width="2"/>
+        <rect x="60" y="35" width="105" height="34" rx="8" fill="#fff" stroke="#172b4d" stroke-width="2"/>
+        <text x="112" y="57" text-anchor="middle" font-size="12" fill="#172b4d">Differential drive</text>
+
+        <line x1="360" y1="78" x2="360" y2="48" stroke="#6b778c" stroke-width="2"/>
+        <rect x="308" y="12" width="105" height="34" rx="8" fill="#fff" stroke="#172b4d" stroke-width="2"/>
+        <text x="360" y="34" text-anchor="middle" font-size="12" fill="#172b4d">Cameras</text>
+
+        <line x1="410" y1="108" x2="575" y2="58" stroke="#6b778c" stroke-width="2"/>
+        <rect x="555" y="38" width="105" height="34" rx="8" fill="#fff" stroke="#172b4d" stroke-width="2"/>
+        <text x="607" y="60" text-anchor="middle" font-size="12" fill="#172b4d">LiDAR (2-D/3-D)</text>
+
+        <line x1="410" y1="150" x2="575" y2="200" stroke="#6b778c" stroke-width="2"/>
+        <rect x="555" y="182" width="105" height="34" rx="8" fill="#fff" stroke="#172b4d" stroke-width="2"/>
+        <text x="607" y="204" text-anchor="middle" font-size="12" fill="#172b4d">6-DOF arm</text>
+
+        <line x1="360" y1="182" x2="360" y2="216" stroke="#6b778c" stroke-width="2"/>
+        <rect x="305" y="216" width="110" height="34" rx="8" fill="#fff" stroke="#172b4d" stroke-width="2"/>
+        <text x="360" y="238" text-anchor="middle" font-size="12" fill="#172b4d">Mic / Speaker</text>
+
+        <line x1="310" y1="150" x2="150" y2="200" stroke="#6b778c" stroke-width="2"/>
+        <rect x="62" y="182" width="105" height="34" rx="8" fill="#fff" stroke="#172b4d" stroke-width="2"/>
+        <text x="114" y="204" text-anchor="middle" font-size="12" fill="#172b4d">LLM (local)</text>
+      </svg>
+      <figcaption>ROS 2 as the hub: standardized communication and out-of-the-box drivers mean components are swappable without rework.</figcaption>
+    </figure>
+
+    <!-- ========== PROJECTS ========== -->
+    <h2 id="projects">And Finally, the Projects</h2>
+
+    <p>As they say, necessity is the mother of invention. So what better way to pick a project than to point
+	the robot(s) at a real, everyday pain point? The project is a success if the pain point actually goes away.</p>
+
+    <p>I'll be tackling a couple of home projects, mostly so that any collateral damage stays, well, in-house. 
+	And even though each project will be aiming at a specific goal, the real goal is generating reusable building 
+	blocks. So the solutions should stay as generic and extensible as possible.</p>
+
+    <div class="info-banner">
+      <p>After a day of DIY, my work area is usually a disaster. The floor is a graveyard of sawdust, iron filings, wood 
+	  shavings, plastic dust, crumpled paper, cardboard, packaging, hand tools, power tools — the full catalogue. A 
+	  huge chunk of my evening is just cleaning up and sorting through that mess. It would help me no end if a robot 
+	  could take that off my hands.</p>
+	  <p>So I'm splitting it into two projects: one to pick up and stow anything useful, and the other to sweep up the rest.</p>
+    </div>
+
+    <!-- ---- Home Project 1 ---- -->
+    <h3 id="sweeper">Home Project 1 — An Autonomous Sweeper Robot</h3>
+	<p><em>Check out <a href="robotic_sweeper.html">Autonomous Sweeper Robot</a> for details</em></p>
+
+    <p>Once I've cleared the "preservables" off the floor, my trusty broom — with myself at the other end — usually handles the 
+	rest. The vacuum cleaner is, frankly, too delicate to expose to this kind of chaos.</p>
+
+    <p>The goal here: remove both the broom and me from the equation. The robot should be able to sweep all debris from a given
+	area into a dustpan that might be sitting anywhere in the room.</p>
+	
+    <p>The "given area" may be either:</p>
+
+    <ul>
+      <li>The entire sweepable area of the room — where we lean on LiDAR, room-mapping (like SLAM_Toolbox) and navigation (for example, the NAV2 stack) — or</li>
+      <li>Just the patch flagged by an automatic debris-detection sweep (we'll be tracking debris with a combination of laser beams and OpenCV).</li>
+    </ul>
+
+    <p>The dustpan's location will need to be re-identified every run — YOLO-E on the camera feed should be more than enough for that.</p>
+
+    <div class="success-banner">
+      <strong>Other building blocks that'll get built here (and will likely carry over into the other projects):</strong>
+      <ol>
+        <li>Two-wheel differential drive with PID control</li>
+        <li>Text-to-Speech output over a Bluetooth headset</li>
+      </ol>
+    </div>
+
+    <figure class="diagram">
+      <svg viewBox="0 0 720 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Side view of a sweeper robot sweeping debris across the floor and depositing it into a dustpan located anywhere in the room">
+        <defs>
+          <marker id="arrowS" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+            <path d="M0,0 L8,4 L0,8 Z" fill="#ff5630"/>
+          </marker>
+        </defs>
+        <!-- floor -->
+        <line x1="20" y1="170" x2="700" y2="170" stroke="#172b4d" stroke-width="3"/>
+        <!-- robot -->
+        <circle cx="120" cy="140" r="26" fill="#fff" stroke="#172b4d" stroke-width="2.5"/>
+        <rect x="95" y="118" width="50" height="16" rx="4" fill="#e9e2ff" stroke="#40329e" stroke-width="2"/>
+        <text x="120" y="105" text-anchor="middle" font-size="11.5" fill="#40329e">slightly raised body</text>
+        <!-- brush (rotating, under body) -->
+        <circle cx="120" cy="164" r="9" fill="#fff" stroke="#172b4d" stroke-width="2"/>
+        <g stroke="#172b4d" stroke-width="2">
+          <line x1="120" y1="155" x2="120" y2="173"/>
+          <line x1="111" y1="159" x2="129" y2="169"/>
+          <line x1="111" y1="169" x2="129" y2="159"/>
+        </g>
+        <!-- swept debris trail -->
+        <g fill="#c1c7d0" stroke="#6b778c" stroke-width="1">
+          <circle cx="165" cy="163" r="3"/><circle cx="185" cy="165" r="3"/>
+          <circle cx="205" cy="162" r="3"/><circle cx="230" cy="164" r="3"/>
+          <circle cx="255" cy="163" r="3"/><circle cx="280" cy="165" r="3"/>
+        </g>
+        <path d="M145 160 C 240 150, 330 158, 420 162" fill="none" stroke="#ff5630" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrowS)"/>
+        <text x="285" y="140" text-anchor="middle" font-size="11.5" fill="#ff5630">swept debris</text>
+        <!-- dustpan -->
+        <path d="M430 130 L520 130 L505 170 L445 170 Z" fill="#fff" stroke="#36b37e" stroke-width="2.5"/>
+        <line x1="512" y1="130" x2="560" y2="80" stroke="#36b37e" stroke-width="5" stroke-linecap="round"/>
+        <text x="475" y="112" text-anchor="middle" font-size="11.5" fill="#36b37e">dustpan — located</text>
+        <text x="475" y="97" text-anchor="middle" font-size="11.5" fill="#36b37e">each time via YOLOE</text>
+        <!-- area boundary -->
+        <rect x="70" y="176" width="470" height="8" fill="none" stroke="#0052cc" stroke-width="1.5" stroke-dasharray="5 4"/>
+        <text x="305" y="200" text-anchor="middle" font-size="11.5" fill="#0052cc">"given area" — full room (SLAM + NAV2) or debris-detected zone (laser + OpenCV)</text>
+      </svg>
+      <figcaption>The sweeper: define the area, detect debris, and push it all into wherever the dustpan happens to be.</figcaption>
+    </figure>
+
+    <!-- ---- Home Project 2 ---- -->
+    <h3 id="tools">Home Project 2 — A Tool Organising Robot</h3>
+
+    <p>Before the sweeper can do its thing, we need to get the important stuff — tools, components, the like — off the floor. That's what this project is for.</p>
+
+    <p>To start with, I'll use OpenCV to detect objects with non-random outlines (i.e. anything that some decipherable shape) and 
+	have the robot place them in a designated tray. Down the line, YOLO can categorise them into tools, components, whatever. The 
+	holy grail, though? Picking up a tiny resistor, reading its colour bands, and filing it in the right bin. That's the dream.</p>
+
+    <div class="success-banner">
+      <strong>This is where we'll build out the robotic arm block.</strong>
+    </div>
+
+    <figure class="diagram">
+      <svg viewBox="0 0 720 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Arm picking objects from a messy floor and sorting them into labelled bins, including a tiny resistor being placed into its correct bin">
+        <!-- floor -->
+        <line x1="20" y1="170" x2="700" y2="170" stroke="#172b4d" stroke-width="3"/>
+        <!-- messy floor items -->
+        <g>
+          <rect x="60" y="155" width="34" height="14" rx="3" fill="#c1c7d0" stroke="#6b778c" stroke-width="1.5" transform="rotate(-12 77 162)"/>
+          <circle cx="130" cy="162" r="8" fill="#c1c7d0" stroke="#6b778c" stroke-width="1.5"/>
+          <rect x="165" y="152" width="10" height="18" rx="2" fill="#c1c7d0" stroke="#6b778c" stroke-width="1.5" transform="rotate(20 170 161)"/>
+        </g>
+        <text x="120" y="196" text-anchor="middle" font-size="11.5" fill="#6b778c">debris with non-random outlines (OpenCV)</text>
+        <!-- arm -->
+        <rect x="300" y="170" width="90" height="18" rx="5" fill="#40329e"/>
+        <line x1="345" y1="168" x2="315" y2="95" stroke="#172b4d" stroke-width="9" stroke-linecap="round"/>
+        <line x1="315" y1="95" x2="390" y2="70" stroke="#172b4d" stroke-width="9" stroke-linecap="round"/>
+        <circle cx="315" cy="95" r="7" fill="#fff" stroke="#172b4d" stroke-width="2.5"/>
+        <!-- gripper holding tool -->
+        <path d="M390 70 L415 55 M390 70 L415 82" stroke="#172b4d" stroke-width="6" stroke-linecap="round"/>
+        <rect x="400" y="60" width="26" height="12" rx="3" fill="#0052cc" transform="rotate(12 413 66)"/>
+        <!-- bins -->
+        <rect x="500" y="118" width="60" height="52" fill="#fff" stroke="#36b37e" stroke-width="2"/>
+        <rect x="510" y="128" width="18" height="32" rx="2" fill="#c1c7d0" transform="rotate(-8 519 144)"/>
+        <rect x="534" y="130" width="16" height="30" rx="2" fill="#c1c7d0" transform="rotate(10 542 145)"/>
+        <text x="530" y="190" text-anchor="middle" font-size="11.5" fill="#36b37e">tools</text>
+        
+		<!-- sorting arrow -->
+        <path d="M430 66 C 470 60, 490 90, 515 115" fill="none" stroke="#6b778c" stroke-width="2" stroke-dasharray="6 4"/>
+      </svg>
+      <figcaption>Tool organiser: detect, pick, categorise and bin — the project that builds the robotic arm block.</figcaption>
+    </figure>
+
+    <!-- ---- Main Project ---- -->
+    <h3 id="library">The Main Project — An Autonomous Library Assistant</h3>
+
+    <p>This is the one meant for the real world. The deployment target is a public library — busy enough to be interesting, 
+	with plenty of people milling about, but not quite as chaotic as a train platform at rush hour.</p>
+	<p>A library is also a gift in terms of structure: shelves are properly tagged with text, barcodes, QR codes — all of 
+	which are now machine-readable. That lets us validate operations end-to-end. Because for all its improvements, AI is 
+	still very much prone to hallucinations, and "I'm pretty sure that's Pride and Prejudice" isn't exactly a shelf you 
+	can point a robot at.</p>  
+
+    <p>Here's what it'd need to do, from both sides of the counter:</p>
+
+    <table>
+      <thead>
+        <tr><th style="width:160px">Perspective</th><th>Expectations</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th>Administrative</th>
+          <td>
+            1) Transport returned books to the correct shelf and slot<br>
+            2) Rearrange books that have drifted out of order<br>
+            3) Pick up and shelve books that are just... <em>lying around</em><br>
+            4) Cross-reference the physical stack with the catalogue database
+          </td>
+        </tr>
+        <tr>
+          <th>User</th>
+          <td>
+            1) Answer queries about availability and shelf location<br>
+            2) Fetch a requested book off the shelf, if it's there<br>
+            3) Suggest alternatives if the requested title is unavailable<br>
+            4) Walk through the borrowing process on the user's behalf
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="success-banner">
+      The two home projects should give us most of the technical groundwork — the mobility, the vision, the arm, the voice — 
+	  that this one needs. The library project is really where all those building blocks get pulled together into something 
+	  that's useful, visible, and (hopefully) polite.
+    </div>
+
+    <figure class="diagram">
+      <svg viewBox="0 0 720 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A library robot moving between tagged shelves, transporting and retrieving books, while a user issues a verbal request">
+        <defs>
+          <marker id="arrowL" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+            <path d="M0,0 L8,4 L0,8 Z" fill="#0052cc"/>
+          </marker>
+        </defs>
+        <!-- shelves left -->
+        <g>
+          <rect x="40" y="40" width="130" height="160" fill="#fff" stroke="#172b4d" stroke-width="2.5"/>
+          <line x1="40" y1="95" x2="170" y2="95" stroke="#172b4d" stroke-width="2"/>
+          <line x1="40" y1="150" x2="170" y2="150" stroke="#172b4d" stroke-width="2"/>
+          <g fill="#c1c7d0" stroke="#6b778c" stroke-width="1">
+            <rect x="52" y="52" width="12" height="40"/><rect x="68" y="50" width="12" height="42"/>
+            <rect x="84" y="55" width="12" height="37"/><rect x="100" y="50" width="12" height="42"/>
+            <rect x="116" y="54" width="12" height="38"/><rect x="132" y="50" width="12" height="42"/>
+            <rect x="148" y="56" width="12" height="36"/>
+            <rect x="52" y="108" width="12" height="39"/><rect x="68" y="105" width="12" height="42"/>
+            <rect x="84" y="110" width="12" height="37"/><rect x="100" y="105" width="12" height="42"/>
+            <rect x="116" y="109" width="12" height="38"/><rect x="132" y="105" width="12" height="42"/>
+          </g>
+          <!-- misplaced book -->
+          <rect x="100" y="160" width="12" height="36" fill="#ff5630" transform="rotate(18 106 178)"/>
+          <rect x="130" y="166" width="64" height="14" rx="2" fill="#e9e2ff" stroke="#40329e" stroke-width="1.5"/>
+          <text x="162" y="177" text-anchor="middle" font-size="8.5" fill="#40329e">QR / barcode</text>
+          <text x="105" y="222" text-anchor="middle" font-size="11.5" fill="#6b778c">tagged shelves (validation)</text>
+        </g>
+        <!-- robot with lifted book -->
+        <rect x="330" y="140" width="80" height="50" rx="10" fill="#fff" stroke="#172b4d" stroke-width="2.5"/>
+        <rect x="345" y="120" width="50" height="24" rx="5" fill="#e9e2ff" stroke="#40329e" stroke-width="2"/>
+        <circle cx="352" cy="195" r="10" fill="#40329e"/>
+        <circle cx="398" cy="195" r="10" fill="#40329e"/>
+        <rect x="368" y="102" width="26" height="14" rx="2" fill="#0052cc"/>
+        <text x="370" y="112" font-size="8.5" fill="#fff">book</text>
+        <!-- user -->
+        <circle cx="590" cy="95" r="20" fill="#fff" stroke="#172b4d" stroke-width="2.5"/>
+        <path d="M562 165 Q590 122 618 165" fill="#fff" stroke="#172b4d" stroke-width="2.5"/>
+        <rect x="535" y="25" width="135" height="32" rx="8" fill="#fff" stroke="#0052cc" stroke-width="2"/>
+        <text x="602" y="45" text-anchor="middle" font-size="11.5" fill="#0052cc">"Do you have this book?"</text>
+        <text x="590" y="190" text-anchor="middle" font-size="11.5" fill="#172b4d">User</text>
+        <!-- arrows: robot shuttling -->
+        <path d="M300 165 C 270 160, 240 150, 180 130" fill="none" stroke="#0052cc" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrowL)"/>
+        <text x="240" y="120" font-size="11" fill="#0052cc">transport /</text>
+        <text x="240" y="133" font-size="11" fill="#0052cc">rearrange</text>
+        <line x1="445" y1="140" x2="545" y2="98" stroke="#0052cc" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#arrowL)"/>
+        <text x="470" y="105" font-size="11" fill="#0052cc">serve user</text>
+        <!-- tidy book on floor -->
+        <rect x="300" y="182" width="22" height="12" rx="2" fill="#c1c7d0" stroke="#6b778c" stroke-width="1.5" transform="rotate(-15 311 188)"/>
+        <text x="311" y="215" text-anchor="middle" font-size="10.5" fill="#6b778c">tidy up</text>
+      </svg>
+      <figcaption>The umbrella project: a public library assistant combining every foundational block — voice, mobility, recognition, navigation and the arm.</figcaption>
+    </figure>
+
+  </main>
+</div>
+<script>
+(function () {
+  var tree = document.querySelector('nav.page-tree');
+  if (!tree) return;
+
+  var STORAGE_KEY = 'rrw-tree-state';
+  var items = Array.prototype.slice.call(tree.querySelectorAll('li'));
+
+  /* ---- Identify parents (li elements that contain a nested <ul>) ---- */
+  var parents = items.filter(function (li) {
+    return li.querySelector(':scope > ul');
+  });
+
+  /* ---- Restore saved expand/collapse state, default: all expanded ---- */
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch (e) {}
+
+  parents.forEach(function (li, i) {
+    var key = li.querySelector(':scope > a').getAttribute('href');
+    if (saved[key] === false) li.classList.add('collapsed');
+
+    /* Add a toggle button to the parent's link */
+    var a = li.querySelector(':scope > a');
+    var btn = document.createElement('span');
+    btn.className = 'toggle';
+    btn.setAttribute('role', 'button');
+    btn.setAttribute('aria-label', 'Toggle ' + a.textContent.trim());
+    btn.addEventListener('click', function (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      li.classList.toggle('collapsed');
+      saveState();
+    });
+    a.appendChild(btn);
+  });
+
+  /* ---- Don't navigate if the user clicks the toggle area ---- */
+  tree.addEventListener('click', function (ev) {
+    if (ev.target.classList && ev.target.classList.contains('toggle')) {
+      ev.preventDefault();
+    }
+  });
+
+  /* ---- Persist state ---- */
+  function saveState() {
+    var state = {};
+    parents.forEach(function (li) {
+      var key = li.querySelector(':scope > a').getAttribute('href');
+      state[key] = !li.classList.contains('collapsed');
+    });
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+  }
+
+  /* ---- Expand all / Collapse all ---- */
+  var toggleAll = document.getElementById('toggleAll');
+  if (toggleAll) {
+    toggleAll.addEventListener('click', function () {
+      var anyExpanded = parents.some(function (li) {
+        return !li.classList.contains('collapsed');
+      });
+      parents.forEach(function (li) {
+        li.classList.toggle('collapsed', anyExpanded);  /* if any open → close all */
+      });
+      toggleAll.textContent = anyExpanded ? 'Expand all' : 'Collapse all';
+      saveState();
+    });
+  }
+
+  /* ---- Keyboard support for the toggle buttons ---- */
+  tree.addEventListener('keydown', function (ev) {
+    if ((ev.key === 'Enter' || ev.key === ' ') &&
+        ev.target.classList && ev.target.classList.contains('toggle')) {
+      ev.preventDefault();
+      ev.target.click();
+    }
+  });
+})();
+</script>
+</body>
+</html>
